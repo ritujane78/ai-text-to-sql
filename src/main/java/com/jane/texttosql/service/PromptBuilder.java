@@ -1,9 +1,6 @@
 package com.jane.texttosql.service;
 
-import com.jane.texttosql.schema.ColumnSchema;
-import com.jane.texttosql.schema.Relationship;
-import com.jane.texttosql.schema.SchemaProvider;
-import com.jane.texttosql.schema.TableSchema;
+import com.jane.texttosql.schema.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -28,13 +25,20 @@ public class PromptBuilder {
                 .map(this::renderRelationship)
                 .collect(Collectors.joining("\n"));
 
+        String businessRules = schemaProvider.getBusinessRules().stream()
+                .map(rule -> "- " + rule.getRule())
+                .collect(Collectors.joining("\n"));
+
         return """
-               You are an assistant that generates SQL queries for a PostgreSQL database. 
+               You are an assistant that generates SQL queries for a MySQL database. 
 
                Database schema:
                %s
 
                Relationship:
+               %s
+               
+               Business rules:
                %s
                
                 Instructions:
@@ -46,7 +50,7 @@ public class PromptBuilder {
 
                Generate a SQL query for the following question:
                %s
-               """.formatted(tables, relationships, question);
+               """.formatted(tables, relationships, businessRules, question);
 
     }
 
