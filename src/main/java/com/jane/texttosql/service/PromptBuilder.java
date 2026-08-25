@@ -1,21 +1,24 @@
 package com.jane.texttosql.service;
 
+import com.jane.texttosql.schema.ColumnSchema;
 import com.jane.texttosql.schema.Relationship;
 import com.jane.texttosql.schema.SchemaProvider;
 import com.jane.texttosql.schema.TableSchema;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class PromptBuilder {
 
     private final SchemaProvider schemaProvider;
 
-    public String buildPrompt(String question){
+    public PromptBuilder(SchemaProvider schemaProvider) {
+        this.schemaProvider = schemaProvider;
+    }
+
+    public String buildPrompt(String question) {
 
         String tables = schemaProvider.getTables().stream()
                 .map(this::renderTable)
@@ -24,8 +27,9 @@ public class PromptBuilder {
         String relationships = schemaProvider.getRelationships().stream()
                 .map(this::renderRelationship)
                 .collect(Collectors.joining("\n"));
+
         return """
-               You are an assistant that generates SQL queries for a MySQL database. 
+               You are an assistant that generates SQL queries for a PostgreSQL database. 
 
                Database schema:
                %s
@@ -43,18 +47,37 @@ public class PromptBuilder {
                Generate a SQL query for the following question:
                %s
                """.formatted(tables, relationships, question);
-    }
-    private String renderTable(TableSchema table){
-        String columns = String.join(", ", table.getColumns());
-        return "- %s(%s)".formatted(table.getTableName(), columns);
+
     }
 
-    private String renderRelationship(Relationship relationship){
-        return "%s.%s references %s.%s".formatted(
+    private String renderTable(TableSchema table) {
+        String columns = table.getColumns().stream()
+                .map(this::renderColumn)
+                .collect(Collectors.joining("\n"));
+
+        return """
+                Table: %s
+                Description: %s
+                Columns:
+                %s
+                """.formatted(
+                table.getTableName(),
+                table.getDescription(),
+                columns
+        ).trim();
+    }
+
+    private String renderColumn(ColumnSchema column) {
+        return "- %s: %s".formatted(column.getName(), column.getDescription());
+    }
+
+    private String renderRelationship(Relationship relationship) {
+        return "- %s.%s references %s.%s".formatted(
                 relationship.getFromTable(),
                 relationship.getFromColumn(),
                 relationship.getToTable(),
                 relationship.getToColumn()
         );
     }
+
 }
