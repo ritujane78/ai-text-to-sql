@@ -2,6 +2,7 @@ package com.jane.texttosql.service;
 
 import com.jane.texttosql.dto.TextToSqlRequest;
 import com.jane.texttosql.dto.TextToSqlResponse;
+import com.jane.texttosql.validation.SqlValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -19,12 +20,15 @@ public class TextToSqlService {
 
     private final SqlExecutionService sqlExecutionService;
     private final ChatClient chatClient;
+    private final SqlValidator sqlValidator;
 
     public TextToSqlResponse handle(TextToSqlRequest request ){
         String prompt = promptBuilder.buildPrompt(request.getQuestion());
 
         log.info("Prompting text to sql request: {}", prompt);
         String generatedSql = chatClient.prompt(prompt).call().content();
+
+        sqlValidator.validateOrThrow(generatedSql);
 
         generatedSql = normalizeSql(generatedSql);
         log.info("Generated SQL: {}", generatedSql);
