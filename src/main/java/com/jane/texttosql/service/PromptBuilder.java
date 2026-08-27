@@ -1,7 +1,6 @@
 package com.jane.texttosql.service;
 
 import com.jane.texttosql.schema.*;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +11,7 @@ public class PromptBuilder {
 
     private final SchemaProvider schemaProvider;
 
-    public PromptBuilder(@Qualifier("dynamicSchemaProvider") SchemaProvider schemaProvider) {
+    public PromptBuilder(@Qualifier("cachedSchemaProvider") SchemaProvider schemaProvider) {
         this.schemaProvider = schemaProvider;
     }
 
